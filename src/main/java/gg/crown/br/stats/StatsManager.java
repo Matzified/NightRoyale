@@ -1,6 +1,7 @@
 package gg.crown.br.stats;
 
 import gg.crown.br.NightRoyalePlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -9,9 +10,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class StatsManager implements Listener {
 
@@ -100,6 +99,26 @@ public class StatsManager implements Listener {
                 statsConfig.save(statsFile);
             } catch (IOException ignored) {}
         }
+    }
+
+    public List<String> getKnownPlayerNames() {
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            names.add(p.getName());
+        }
+        if (statsConfig != null) {
+            for (String key : statsConfig.getKeys(false)) {
+                if (key.equalsIgnoreCase("server")) continue;
+                try {
+                    UUID uuid = UUID.fromString(key);
+                    org.bukkit.OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
+                    if (op.getName() != null) {
+                        names.add(op.getName());
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        return new ArrayList<>(names);
     }
 
     @EventHandler

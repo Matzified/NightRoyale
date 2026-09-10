@@ -49,3 +49,6 @@ commands:
   lobby:
     description: Return to the waiting lobby
     aliases: [hub, leave, spawn]
+  stats:
+    description: View player statistics, skin model, and competitive rating
+    aliases: [statistic, profile]

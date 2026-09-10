@@ -118,6 +118,7 @@ public final class NightRoyalePlugin extends JavaPlugin {
         pm.registerEvents(spectatorManager, this);
         pm.registerEvents(motdManager, this);
         pm.registerEvents(scoreboardManager, this);
+        pm.registerEvents(new gg.crown.br.gui.StatsGuiListener(), this);
 
         // Register commands
         var nrCmd = new NightRoyaleCommand(this);
@@ -147,6 +148,10 @@ public final class NightRoyalePlugin extends JavaPlugin {
         getCommand("discord").setExecutor(new DiscordLinkCommand(this));
         getCommand("elytra").setExecutor(new ElytraToyCommand(this));
         getCommand("lobby").setExecutor(new LobbyCommand(this));
+
+        var statsCmd = new StatsCommand(this);
+        getCommand("stats").setExecutor(statsCmd);
+        getCommand("stats").setTabCompleter(statsCmd);
 
         getLogger().info("Night Royale v" + getDescription().getVersion() + " initialized by " + getDescription().getAuthors());
     }
