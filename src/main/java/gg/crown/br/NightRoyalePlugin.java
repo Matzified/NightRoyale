@@ -31,6 +31,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.*;
+
 public final class NightRoyalePlugin extends JavaPlugin {
 
     private LoginGateManager loginGateManager;
@@ -120,40 +122,72 @@ public final class NightRoyalePlugin extends JavaPlugin {
         pm.registerEvents(scoreboardManager, this);
         pm.registerEvents(new gg.crown.br.gui.StatsGuiListener(), this);
 
-        // Register commands
+        // Register commands with fallback support
         var nrCmd = new NightRoyaleCommand(this);
-        getCommand("nightroyale").setExecutor(nrCmd);
-        getCommand("nightroyale").setTabCompleter(nrCmd);
+        bindCommand("nightroyale", nrCmd, nrCmd, List.of("nr"));
 
         var teamCmd = new TeamCommand(this);
-        getCommand("team").setExecutor(teamCmd);
-        getCommand("team").setTabCompleter(teamCmd);
+        bindCommand("team", teamCmd, teamCmd, List.of("squad", "teams"));
 
-        getCommand("chest").setExecutor(new ChestRefillCommand(this));
-        getCommand("revive").setExecutor(new ReviveCommand(this));
+        bindCommand("chest", new ChestRefillCommand(this), null, Collections.emptyList());
+        bindCommand("revive", new ReviveCommand(this), null, Collections.emptyList());
 
         var rankCmd = new RankCommand(this);
-        getCommand("rank").setExecutor(rankCmd);
-        getCommand("rank").setTabCompleter(rankCmd);
+        bindCommand("rank", rankCmd, rankCmd, Collections.emptyList());
 
         var chatCmd = new ChatToggleCommand(this);
-        getCommand("chat").setExecutor(chatCmd);
-        getCommand("chat").setTabCompleter(chatCmd);
+        bindCommand("chat", chatCmd, chatCmd, Collections.emptyList());
 
         var modCmd = new ModerationCommands(this);
-        getCommand("report").setExecutor(modCmd);
-        getCommand("mute").setExecutor(modCmd);
-        getCommand("unmute").setExecutor(modCmd);
+        bindCommand("report", modCmd, null, Collections.emptyList());
+        bindCommand("mute", modCmd, null, Collections.emptyList());
+        bindCommand("unmute", modCmd, null, Collections.emptyList());
 
-        getCommand("discord").setExecutor(new DiscordLinkCommand(this));
-        getCommand("elytra").setExecutor(new ElytraToyCommand(this));
-        getCommand("lobby").setExecutor(new LobbyCommand(this));
+        bindCommand("discord", new DiscordLinkCommand(this), null, Collections.emptyList());
+        bindCommand("elytra", new ElytraToyCommand(this), null, Collections.emptyList());
+        bindCommand("lobby", new LobbyCommand(this), null, List.of("hub", "leave", "spawn"));
 
         var statsCmd = new StatsCommand(this);
-        getCommand("stats").setExecutor(statsCmd);
-        getCommand("stats").setTabCompleter(statsCmd);
+        bindCommand("stats", statsCmd, statsCmd, List.of("statistic", "profile"));
 
         getLogger().info("Night Royale v" + getDescription().getVersion() + " initialized by " + getDescription().getAuthors());
+    }
+
+    private void bindCommand(String name, org.bukkit.command.CommandExecutor executor, org.bukkit.command.TabCompleter completer, List<String> aliases) {
+        try {
+            var cmd = getCommand(name);
+            if (cmd != null) {
+                cmd.setExecutor(executor);
+                if (completer != null) cmd.setTabCompleter(completer);
+                return;
+            }
+        } catch (Throwable ignored) {}
+
+        try {
+            java.lang.reflect.Field mapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
+            mapField.setAccessible(true);
+            org.bukkit.command.CommandMap commandMap = (org.bukkit.command.CommandMap) mapField.get(Bukkit.getServer());
+
+            org.bukkit.command.defaults.BukkitCommand fallback = new org.bukkit.command.defaults.BukkitCommand(name) {
+                @Override
+                public boolean execute(org.bukkit.command.CommandSender sender, String label, String[] args) {
+                    return executor.onCommand(sender, this, label, args);
+                }
+
+                @Override
+                public java.util.List<String> tabComplete(org.bukkit.command.CommandSender sender, String alias, String[] args) {
+                    if (completer != null) {
+                        java.util.List<String> list = completer.onTabComplete(sender, this, alias, args);
+                        if (list != null) return list;
+                    }
+                    return super.tabComplete(sender, alias, args);
+                }
+            };
+            if (aliases != null && !aliases.isEmpty()) fallback.setAliases(aliases);
+            commandMap.register("nightroyale", fallback);
+        } catch (Throwable t) {
+            getLogger().warning("Could not register command '" + name + "': " + t.getMessage());
+        }
     }
 
     @Override
