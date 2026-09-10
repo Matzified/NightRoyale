@@ -39,8 +39,8 @@ public class MatchManager {
     private long matchStartTimestamp;
     private boolean gracePeriod = true;
 
-    private final Set<UUID> matchRoster = new HashSet<>();
-    private final Map<UUID, Integer> matchKills = new HashMap<>();
+    private final Set<UUID> matchRoster = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final Map<UUID, Integer> matchKills = new java.util.concurrent.ConcurrentHashMap<>();
 
     private BukkitTask mainPulseTask;
     private BukkitTask resetTask;
@@ -53,12 +53,42 @@ public class MatchManager {
 
     public MatchState getState() { return state; }
     public GameMode getCurrentMode() { return currentMode; }
+    public void setCurrentMode(GameMode mode) { this.currentMode = mode; }
     public boolean isGracePeriod() { return gracePeriod; }
     public long getCountdownRemainingSeconds() { return countdownSeconds; }
     public long getRecruitmentRemainingSeconds() { return recruitmentSeconds; }
     public long getGraceRemainingSeconds() { return graceSeconds; }
     public int getMatchKills(UUID uuid) { return matchKills.getOrDefault(uuid, 0); }
     public void recordKill(UUID uuid) { matchKills.put(uuid, matchKills.getOrDefault(uuid, 0) + 1); }
+
+    public boolean isAliveCombatant(Player player) {
+        if (player == null || !player.isOnline()) return false;
+        return matchRoster.contains(player.getUniqueId())
+                && player.getGameMode() == org.bukkit.GameMode.SURVIVAL
+                && !player.isDead();
+    }
+
+    public void handleCombatantDisconnect(Player player) {
+        if (state != MatchState.ACTIVE) return;
+        if (!isAliveCombatant(player)) return;
+
+        // Drop non-kit items in the arena world
+        if (isMatchWorld(player.getWorld())) {
+            for (org.bukkit.inventory.ItemStack item : player.getInventory().getContents()) {
+                if (item != null && !item.getType().isAir() && !plugin.getKitManager().isKitItem(item)) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), item);
+                }
+            }
+            player.getInventory().clear();
+        }
+
+        matchRoster.remove(player.getUniqueId());
+
+        int remaining = getAliveCount();
+        Bukkit.broadcast(Component.text(player.getName() + " disconnected and was eliminated! (" + remaining + " players remaining)", NamedTextColor.GRAY));
+
+        checkWinCondition();
+    }
 
     public long getMatchElapsedSeconds() {
         if (state != MatchState.ACTIVE && state != MatchState.ENDING) return 0;
@@ -155,8 +185,9 @@ public class MatchManager {
         countdownSeconds--;
 
         if (countdownSeconds <= 0) {
-            if (Bukkit.getOnlinePlayers().size() < 2) {
-                Bukkit.broadcast(Component.text("✖ Match cancelled: Not enough players to start.", NamedTextColor.RED));
+            int minPlayers = plugin.getConfig().getInt("match.min-players", 2);
+            if (Bukkit.getOnlinePlayers().size() < minPlayers) {
+                Bukkit.broadcast(Component.text("✖ Match cancelled: Not enough players to start (" + Bukkit.getOnlinePlayers().size() + "/" + minPlayers + ").", NamedTextColor.RED));
                 transitionTo(MatchState.IDLE);
                 return;
             }
@@ -241,21 +272,32 @@ public class MatchManager {
         }
 
         if (plugin.getTeamManager().getMaxTeamSize() > 1) {
-            // Squad mode: check how many squads remain alive
-            Set<Squad> activeSquads = new HashSet<>();
+            // Squad mode: check how many distinct factions (squads or unteamed solo players) remain alive
+            Set<Object> activeFactions = new HashSet<>();
             for (Player p : getAlivePlayers()) {
                 Squad s = plugin.getTeamManager().getSquad(p);
-                if (s != null) activeSquads.add(s);
+                if (s != null) {
+                    activeFactions.add(s);
+                } else {
+                    activeFactions.add(p.getUniqueId());
+                }
             }
 
-            if (activeSquads.size() == 1) {
-                Squad winningSquad = activeSquads.iterator().next();
-                List<Player> winners = new ArrayList<>();
-                for (UUID member : winningSquad.getMembers()) {
-                    Player p = Bukkit.getPlayer(member);
-                    if (p != null) winners.add(p);
+            if (activeFactions.size() == 1) {
+                Object remaining = activeFactions.iterator().next();
+                if (remaining instanceof Squad winningSquad) {
+                    List<Player> winners = new ArrayList<>();
+                    for (UUID member : winningSquad.getMembers()) {
+                        Player p = Bukkit.getPlayer(member);
+                        if (p != null && p.isOnline() && p.getGameMode() == org.bukkit.GameMode.SURVIVAL && !p.isDead()) {
+                            winners.add(p);
+                        }
+                    }
+                    handleMatchEnd(winners.isEmpty() ? getAlivePlayers() : winners);
+                } else if (remaining instanceof UUID uuid) {
+                    Player p = Bukkit.getPlayer(uuid);
+                    handleMatchEnd(p != null ? List.of(p) : Collections.emptyList());
                 }
-                handleMatchEnd(winners);
             }
         } else {
             // Solo mode: 1 player left

@@ -160,7 +160,7 @@ public class DeploymentManager implements Listener {
             return;
         }
 
-        if (player.isOnGround()) {
+        if (player.isOnGround() || player.isInWater() || player.isSwimming() || player.isClimbing()) {
             landPlayer(player);
         }
     }
@@ -181,6 +181,14 @@ public class DeploymentManager implements Listener {
         }
 
         player.playSound(player.getLocation(), Sound.ITEM_ARMOR_EQUIP_IRON, 1.0f, 1.0f);
+    }
+
+    @EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+        Player p = event.getPlayer();
+        if (glidingPlayers.contains(p.getUniqueId())) {
+            landPlayer(p);
+        }
     }
 
     public void clearAll() {

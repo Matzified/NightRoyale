@@ -71,9 +71,14 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(Component.text("✔ Login gate is now CLOSED. Non-admins will be turned away.", NamedTextColor.RED));
                 return true;
             }
-            case "begin" -> {
+            case "begin", "start" -> {
                 plugin.getMatchManager().transitionTo(MatchState.ACTIVE);
                 sender.sendMessage(Component.text("⚡ Match countdown skipped! ACTIVE battle started.", NamedTextColor.GREEN));
+                return true;
+            }
+            case "countdown" -> {
+                plugin.getMatchManager().transitionTo(MatchState.COUNTDOWN);
+                sender.sendMessage(Component.text("⏳ COUNTDOWN started!", NamedTextColor.GREEN));
                 return true;
             }
             case "stop" -> {
@@ -232,6 +237,7 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 GameMode mode = GameMode.fromString(args[1]);
+                plugin.getMatchManager().setCurrentMode(mode);
                 sender.sendMessage(Component.text("✔ Default mode set to: " + mode.name(), NamedTextColor.GREEN));
                 return true;
             }
@@ -563,7 +569,7 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("open", "close", "begin", "stop", "match", "storm", "spectate", "motd", "test", "chest", "addchest", "setlobby", "setarena", "setstormcenter", "ghaststart", "ghastend", "clearghast", "pos1", "pos2", "addspawn", "clearspawns", "arena", "degrass", "teamsize", "mode", "clearitems", "reload"), args[0]);
+            return filter(List.of("open", "close", "start", "begin", "countdown", "stop", "match", "storm", "spectate", "motd", "test", "chest", "addchest", "setlobby", "setarena", "setstormcenter", "ghaststart", "ghastend", "clearghast", "pos1", "pos2", "addspawn", "clearspawns", "arena", "degrass", "teamsize", "mode", "clearitems", "reload"), args[0]);
         }
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("storm")) {

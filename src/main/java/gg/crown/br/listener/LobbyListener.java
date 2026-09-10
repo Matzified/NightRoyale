@@ -26,7 +26,14 @@ public class LobbyListener implements Listener {
         Player player = event.getPlayer();
         MatchState state = plugin.getMatchManager().getState();
 
-        if (state != MatchState.ACTIVE) {
+        if (state == MatchState.ACTIVE || state == MatchState.ENDING) {
+            if (!plugin.getMatchManager().isAliveCombatant(player)) {
+                plugin.getSpectatorManager().makeSpectator(player);
+                Location specLoc = plugin.getMatchManager().getSpectatorLocation();
+                if (specLoc != null) player.teleport(specLoc);
+                player.sendMessage(net.kyori.adventure.text.Component.text("A match is currently in progress. You have been placed into spectator mode.", net.kyori.adventure.text.format.NamedTextColor.YELLOW));
+            }
+        } else {
             player.setGameMode(GameMode.ADVENTURE);
             player.setHealth(20.0);
             player.setFoodLevel(20);
@@ -42,8 +49,10 @@ public class LobbyListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        plugin.getScoreboardManager().remove(event.getPlayer());
-        plugin.getTeamManager().leave(event.getPlayer());
+        Player player = event.getPlayer();
+        plugin.getMatchManager().handleCombatantDisconnect(player);
+        plugin.getScoreboardManager().remove(player);
+        plugin.getTeamManager().leave(player);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

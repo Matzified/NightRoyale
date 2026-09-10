@@ -89,18 +89,35 @@ public class RankManager implements Listener {
         player.playerListName(tag.append(Component.text(player.getName(), rank.getColor())));
 
         // 2. Nametag prefix via Scoreboard Team
-        Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
         String teamName = String.format("%03d_%s", 100 - rank.getWeight(), player.getName());
         if (teamName.length() > 16) teamName = teamName.substring(0, 16);
 
+        applyToBoard(Bukkit.getScoreboardManager().getMainScoreboard(), teamName, tag, rank.getColor(), player.getName());
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online.getScoreboard() != Bukkit.getScoreboardManager().getMainScoreboard()) {
+                applyToBoard(online.getScoreboard(), teamName, tag, rank.getColor(), player.getName());
+            }
+        }
+    }
+
+    public void applyAllToBoard(Scoreboard board) {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            Rank rank = getRank(p);
+            String teamName = String.format("%03d_%s", 100 - rank.getWeight(), p.getName());
+            if (teamName.length() > 16) teamName = teamName.substring(0, 16);
+            applyToBoard(board, teamName, rank.getTagComponent(), rank.getColor(), p.getName());
+        }
+    }
+
+    private void applyToBoard(Scoreboard board, String teamName, Component tag, net.kyori.adventure.text.format.NamedTextColor color, String playerName) {
         Team team = board.getTeam(teamName);
         if (team == null) {
             team = board.registerNewTeam(teamName);
         }
         team.prefix(tag);
-        team.color(rank.getColor());
-        if (!team.hasEntry(player.getName())) {
-            team.addEntry(player.getName());
+        team.color(color);
+        if (!team.hasEntry(playerName)) {
+            team.addEntry(playerName);
         }
     }
 

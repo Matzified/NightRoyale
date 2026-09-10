@@ -131,9 +131,17 @@ public class GoldCrateManager implements Listener {
         if (topDamager != null) {
             Player winner = Bukkit.getPlayer(topDamager);
             if (winner != null && winner.isOnline()) {
-                winner.getInventory().addItem(new ItemStack(Material.TOTEM_OF_UNDYING, 1));
-                winner.getInventory().addItem(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 2));
-                winner.getInventory().addItem(new ItemStack(Material.GOLD_INGOT, 16));
+                ItemStack[] rewards = new ItemStack[] {
+                        new ItemStack(Material.TOTEM_OF_UNDYING, 1),
+                        new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 2),
+                        new ItemStack(Material.GOLD_INGOT, 16)
+                };
+                for (ItemStack reward : rewards) {
+                    Map<Integer, ItemStack> leftover = winner.getInventory().addItem(reward);
+                    for (ItemStack drop : leftover.values()) {
+                        winner.getWorld().dropItemNaturally(winner.getLocation(), drop);
+                    }
+                }
 
                 Bukkit.broadcast(Component.text("✦ " + winner.getName() + " broke the Gold Crate and claimed the rewards!", NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
             }

@@ -52,6 +52,11 @@ public class HazardManager implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBucketFill(org.bukkit.event.player.PlayerBucketFillEvent event) {
+        playerPlacedWater.remove(event.getBlockClicked().getLocation());
+    }
+
     private void checkWaterHazard() {
         long now = System.currentTimeMillis();
 

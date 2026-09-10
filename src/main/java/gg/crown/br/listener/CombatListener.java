@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -77,15 +78,22 @@ public class CombatListener implements Listener {
 
         // Put into spectator after death with custom tools and GUI
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!victim.isOnline()) return;
             victim.spigot().respawn();
-            victim.teleport(plugin.getMatchManager().getSpectatorLocation());
+            Location specLoc = plugin.getMatchManager().getSpectatorLocation();
+            if (specLoc != null) victim.teleport(specLoc);
             plugin.getSpectatorManager().makeSpectator(victim);
             victim.sendMessage(Component.text("✦ You are now spectating. Right-click your compass to view alive players!", NamedTextColor.AQUA));
         }, 2L);
 
         // Broadcast alive combatants count
-        int alive = plugin.getMatchManager().getAliveCount() - 1;
-        Bukkit.broadcast(Component.text(victim.getName() + " was eliminated! (" + alive + " players remaining)", NamedTextColor.GRAY));
+        int remaining = 0;
+        for (Player p : plugin.getMatchManager().getAlivePlayers()) {
+            if (!p.getUniqueId().equals(victim.getUniqueId())) {
+                remaining++;
+            }
+        }
+        Bukkit.broadcast(Component.text(victim.getName() + " was eliminated! (" + remaining + " players remaining)", NamedTextColor.GRAY));
     }
 
     @EventHandler(ignoreCancelled = true)

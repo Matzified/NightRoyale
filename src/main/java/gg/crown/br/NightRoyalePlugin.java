@@ -70,7 +70,6 @@ public final class NightRoyalePlugin extends JavaPlugin {
         saveResource("ranks.yml", false);
         saveResource("stats.yml", false);
         saveResource("matches.json", false);
-        loadLocations();
 
         // Initialize core sub-systems
         this.spectatorManager = new gg.crown.br.spectator.SpectatorManager(this);
@@ -95,6 +94,7 @@ public final class NightRoyalePlugin extends JavaPlugin {
         this.foliageGuardian = new FoliageGuardian(this);
 
         this.matchManager = new MatchManager(this);
+        loadLocations();
 
         // Register event listeners
         var pm = Bukkit.getPluginManager();

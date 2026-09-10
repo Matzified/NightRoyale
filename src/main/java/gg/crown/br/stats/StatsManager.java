@@ -72,8 +72,20 @@ public class StatsManager implements Listener {
     }
 
     public void saveAll() {
-        for (UUID uuid : cachedStats.keySet()) {
-            savePlayerStats(uuid);
+        if (statsConfig == null) return;
+        for (Map.Entry<UUID, PlayerStats> entry : cachedStats.entrySet()) {
+            String path = entry.getKey().toString();
+            PlayerStats stats = entry.getValue();
+            statsConfig.set(path + ".kills", stats.getKills());
+            statsConfig.set(path + ".wins", stats.getWins());
+            statsConfig.set(path + ".games", stats.getGames());
+            statsConfig.set(path + ".coins", stats.getCoins());
+            statsConfig.set(path + ".xp", stats.getXp());
+        }
+        try {
+            statsConfig.save(statsFile);
+        } catch (IOException e) {
+            plugin.getLogger().warning("Could not save stats.yml: " + e.getMessage());
         }
     }
 

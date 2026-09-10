@@ -69,6 +69,7 @@ public class ArmorUpgradeManager implements Listener {
         armor[targetIndex] = upgraded;
         inv.setArmorContents(armor);
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 1.0f, 1.2f);
+        player.getWorld().spawnParticle(org.bukkit.Particle.ENCHANT, player.getLocation().add(0, 1, 0), 25, 0.4, 0.5, 0.4, 0.5);
         player.sendActionBar(Component.text("✦ Armor piece upgraded to " + nextMat.name().split("_")[0] + "!", NamedTextColor.LIGHT_PURPLE));
         return true;
     }
@@ -93,9 +94,16 @@ public class ArmorUpgradeManager implements Listener {
         ItemStack item = event.getItem().getItemStack();
 
         if (isArmorUpgradeItem(item)) {
-            event.setCancelled(true);
-            event.getItem().remove();
-            triggerUpgrade(player);
+            if (triggerUpgrade(player)) {
+                event.setCancelled(true);
+                if (item.getAmount() <= 1) {
+                    event.getItem().remove();
+                } else {
+                    item.subtract(1);
+                    event.getItem().setItemStack(item);
+                }
+            }
+            // If cannot upgrade directly, don't cancel: item enters inventory for manual use or team passing
         }
     }
 
@@ -107,6 +115,8 @@ public class ArmorUpgradeManager implements Listener {
             Player player = event.getPlayer();
             if (triggerUpgrade(player)) {
                 item.subtract(1);
+            } else {
+                player.sendMessage(Component.text("No upgradeable armor equipped!", NamedTextColor.RED));
             }
         }
     }

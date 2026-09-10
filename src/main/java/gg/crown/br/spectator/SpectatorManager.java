@@ -366,6 +366,37 @@ public class SpectatorManager implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoin(org.bukkit.event.player.PlayerJoinEvent event) {
+        Player joiner = event.getPlayer();
+        for (UUID uuid : activeSpectators) {
+            Player spectator = Bukkit.getPlayer(uuid);
+            if (spectator != null && spectator.isOnline()) {
+                joiner.hidePlayer(plugin, spectator);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTarget(org.bukkit.event.entity.EntityTargetLivingEntityEvent event) {
+        if (event.getTarget() instanceof Player p && isSpectator(p)) {
+            event.setCancelled(true);
+            event.setTarget(null);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onFood(org.bukkit.event.entity.FoodLevelChangeEvent event) {
+        if (event.getEntity() instanceof Player p && isSpectator(p)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPotionSplash(org.bukkit.event.entity.PotionSplashEvent event) {
+        event.getAffectedEntities().removeIf(e -> e instanceof Player p && isSpectator(p));
+    }
+
     @EventHandler
     public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
         Player p = event.getPlayer();

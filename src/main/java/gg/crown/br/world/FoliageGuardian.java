@@ -55,13 +55,17 @@ public class FoliageGuardian implements Listener {
 
         int removed = 0;
         for (int x = minX; x <= maxX; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                for (int z = minZ; z <= maxZ; z++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                int highest = Math.min(maxY, world.getHighestBlockYAt(x, z) + 2);
+                for (int y = highest; y >= minY; y--) {
                     Block b = world.getBlockAt(x, y, z);
                     Material mat = b.getType();
                     if (mat == Material.SHORT_GRASS || mat == Material.TALL_GRASS || mat == Material.FERN || mat == Material.LARGE_FERN) {
                         b.setType(Material.AIR, false);
                         removed++;
+                    } else if (mat.isSolid() && y < highest - 10) {
+                        // Terrain goes deep underground, foliage does not grow below solid rock
+                        break;
                     }
                 }
             }

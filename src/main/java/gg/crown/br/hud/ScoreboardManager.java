@@ -34,7 +34,7 @@ public class ScoreboardManager implements Listener {
     }
 
     public void updatePlayer(Player player) {
-        FastBoard board = boards.computeIfAbsent(player.getUniqueId(), id -> new FastBoard(player));
+        FastBoard board = boards.computeIfAbsent(player.getUniqueId(), id -> new FastBoard(player, plugin));
 
         MatchState state = plugin.getMatchManager().getState();
         String region = plugin.getConfig().getString("scoreboard.region", "EU");
@@ -129,11 +129,14 @@ public class ScoreboardManager implements Listener {
         private final Objective objective;
         private final List<String> currentEntries = new ArrayList<>();
 
-        public FastBoard(Player player) {
+        public FastBoard(Player player, NightRoyalePlugin plugin) {
             this.player = player;
             this.scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
             this.objective = scoreboard.registerNewObjective("nr_hud", Criteria.DUMMY, Component.empty());
             this.objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+            if (plugin != null && plugin.getRankManager() != null) {
+                plugin.getRankManager().applyAllToBoard(this.scoreboard);
+            }
             player.setScoreboard(scoreboard);
         }
 
@@ -142,16 +145,22 @@ public class ScoreboardManager implements Listener {
         }
 
         public void updateLines(List<Component> lines) {
-            // Clear old entries
-            for (String entry : currentEntries) {
-                scoreboard.resetScores(entry);
-            }
-            currentEntries.clear();
+            int newSize = lines.size();
 
-            int score = lines.size();
-            for (int i = 0; i < lines.size(); i++) {
+            // Clear old entries that are no longer needed
+            while (currentEntries.size() > newSize) {
+                int lastIdx = currentEntries.size() - 1;
+                String oldEntry = currentEntries.remove(lastIdx);
+                scoreboard.resetScores(oldEntry);
+                Team team = scoreboard.getTeam("line_" + lastIdx);
+                if (team != null) {
+                    team.unregister();
+                }
+            }
+
+            int score = newSize;
+            for (int i = 0; i < newSize; i++) {
                 Component line = lines.get(i);
-                // Create unique fake entry name using invisible color codes
                 String entry = "§" + (char) ('a' + i) + "§r";
                 Team team = scoreboard.getTeam("line_" + i);
                 if (team == null) {
@@ -159,8 +168,16 @@ public class ScoreboardManager implements Listener {
                     team.addEntry(entry);
                 }
                 team.prefix(line);
-                objective.getScore(entry).setScore(score - i);
-                currentEntries.add(entry);
+
+                if (i >= currentEntries.size()) {
+                    currentEntries.add(entry);
+                    objective.getScore(entry).setScore(score - i);
+                } else {
+                    Score s = objective.getScore(entry);
+                    if (s.getScore() != (score - i)) {
+                        s.setScore(score - i);
+                    }
+                }
             }
         }
 

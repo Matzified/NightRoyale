@@ -47,7 +47,7 @@ public class MatchRecorder {
 
     public List<MatchEntry> loadMatches() {
         if (!matchesFile.exists()) return new ArrayList<>();
-        try (FileReader reader = new FileReader(matchesFile)) {
+        try (FileReader reader = new FileReader(matchesFile, java.nio.charset.StandardCharsets.UTF_8)) {
             Type listType = new TypeToken<ArrayList<MatchEntry>>(){}.getType();
             List<MatchEntry> list = gson.fromJson(reader, listType);
             return list != null ? list : new ArrayList<>();
@@ -63,7 +63,7 @@ public class MatchRecorder {
                 matchesFile.getParentFile().mkdirs();
                 matchesFile.createNewFile();
             }
-            try (FileWriter writer = new FileWriter(matchesFile)) {
+            try (FileWriter writer = new FileWriter(matchesFile, java.nio.charset.StandardCharsets.UTF_8)) {
                 gson.toJson(entries, writer);
             }
         } catch (IOException e) {
