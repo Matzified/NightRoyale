@@ -95,6 +95,43 @@ public class ScoreboardManager implements Listener {
         }
 
         board.updateLines(lines);
+        updateTab(player);
+    }
+
+    public void updateTab(Player player) {
+        String modeName = gg.crown.br.motd.MotdManager.toSmallCaps(plugin.getMatchManager().getCurrentMode().name());
+        int online = Bukkit.getOnlinePlayers().size();
+        int cap = plugin.getLoginGateManager().getPurgeCap();
+        int ping = player.getPing();
+        MatchState state = plugin.getMatchManager().getState();
+
+        String status;
+        if (state == MatchState.ACTIVE) {
+            int alive = plugin.getMatchManager().getAliveCount();
+            status = "<#A855F7><b>ɢᴀᴍᴇ ɪɴ ᴘʀᴏɢʀᴇss</b></#A855F7> <gray>(</gray><green>" + alive + " ᴀʟɪᴠᴇ</green><gray>)</gray>";
+        } else if (state == MatchState.COUNTDOWN) {
+            long cd = plugin.getMatchManager().getCountdownRemainingSeconds();
+            status = "<gold><b>ᴘᴜʀɢᴇ ɪɴ " + cd + "s</b></gold>";
+        } else if (state == MatchState.RECRUITMENT) {
+            status = "<aqua><b>sǫᴜᴀᴅ ғᴏʀᴍᴀᴛɪᴏɴ</b></aqua>";
+        } else {
+            status = "<yellow><b>ᴡᴀɪᴛɪɴɢ ғᴏʀ ɢᴀᴍᴇ</b></yellow>";
+        }
+
+        Component header = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                "\n" +
+                "       <gradient:#A855F7:#E085FF><b>✦ ɴɪɢʜᴛ ʀᴏʏᴀʟᴇ ✦</b></gradient>       \n" +
+                "  <dark_gray>•</dark_gray> <gray>1.21.x ʙᴀᴛᴛʟᴇ ʀᴏʏᴀʟᴇ</gray> <dark_gray>•</dark_gray> <#E085FF><b>" + modeName + " ᴍᴏᴅᴇ</b></#E085FF> <dark_gray>•</dark_gray>\n"
+        );
+
+        Component footer = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                "\n" +
+                "  <gray>ᴘʟᴀʏᴇʀs:</gray> <#E085FF><b>" + online + "</b></#E085FF><gray>/</gray><white>" + cap + "</white>  <dark_gray>•</dark_gray>  <gray>ᴘɪɴɢ:</gray> <#A855F7><b>" + ping + "ms</b></#A855F7>  <dark_gray>•</dark_gray>  <gray>sᴛᴀᴛᴜs:</gray> " + status + "\n" +
+                "  <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>\n" +
+                "  <gray>ᴅɪsᴄᴏʀᴅ:</gray> <gradient:#A855F7:#E085FF><b>discord.gg/nightroyale</b></gradient>  <dark_gray>•</dark_gray>  <gray>ᴜsᴇ</gray> <yellow><b>/team</b></yellow> <gray>&</gray> <yellow><b>/lobby</b></yellow>\n"
+        );
+
+        player.sendPlayerListHeaderAndFooter(header, footer);
     }
 
     public void remove(Player player) {
@@ -134,10 +171,10 @@ public class ScoreboardManager implements Listener {
             this.scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
             this.objective = scoreboard.registerNewObjective("nr_hud", Criteria.DUMMY, Component.empty());
             this.objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+            player.setScoreboard(scoreboard);
             if (plugin != null && plugin.getRankManager() != null) {
                 plugin.getRankManager().applyAllToBoard(this.scoreboard);
             }
-            player.setScoreboard(scoreboard);
         }
 
         public void updateTitle(Component title) {

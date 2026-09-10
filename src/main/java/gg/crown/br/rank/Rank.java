@@ -56,6 +56,10 @@ public enum Rank {
         return Component.text(glyph + " ").font(Key.key("nightroyale:main"));
     }
 
+    public String getTabTeamName() {
+        return String.format("%02d_%s", ordinal(), name().toLowerCase());
+    }
+
     public static Rank fromString(String name) {
         if (name == null) return MEMBER;
         String sanitized = name.trim().toUpperCase().replace("-", "_").replace(" ", "_");

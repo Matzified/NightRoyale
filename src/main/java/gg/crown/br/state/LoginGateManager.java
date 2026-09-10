@@ -60,17 +60,20 @@ public class LoginGateManager implements Listener {
 
         int online = Bukkit.getOnlinePlayers().size();
         if (online >= purgeCap) {
-            String fullMsg = plugin.getConfig().getString(
-                    "login-gate.full-message",
-                    "<red>Server Full!</red>\n<white>The player cap for this game has been reached.</white>"
-            );
-            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, miniMessage.deserialize(fullMsg));
+            boolean hasPriority = plugin.getRankManager().hasPriority(uuid);
+            if (!hasPriority) {
+                String fullMsg = plugin.getConfig().getString(
+                        "login-gate.full-message",
+                        "<red>Server Full!</red>\n<white>The player cap for this game has been reached.</white>\n<gradient:#A855F7:#E085FF><b>Ranked players have Purge Priority!</b></gradient>"
+                );
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_FULL, miniMessage.deserialize(fullMsg));
+            }
         }
     }
 
     @EventHandler(priority = EventPriority.LOW)
     public void onLogin(PlayerLoginEvent event) {
-        if (event.getPlayer().hasPermission("nightroyale.admin")) {
+        if (event.getPlayer().hasPermission("nightroyale.admin") || plugin.getRankManager().hasPriority(event.getPlayer().getUniqueId())) {
             event.allow();
         }
     }

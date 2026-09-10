@@ -435,12 +435,31 @@ public class MatchManager {
                 // Scatter arena loot chests
                 plugin.getChestManager().scatter(matchWorld, currentMode, currentScenarios);
 
-                // Populate match roster & equip kits
+                // Populate match roster & equip kits with rank purge priority
                 matchRoster.clear();
                 matchKills.clear();
                 List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
 
-                for (Player p : players) {
+                int cap = plugin.getLoginGateManager().getPurgeCap();
+                // Prioritize players with higher rank weights into combatant slots
+                players.sort((p1, p2) -> Integer.compare(
+                        plugin.getRankManager().getRank(p2).getWeight(),
+                        plugin.getRankManager().getRank(p1).getWeight()
+                ));
+
+                List<Player> combatants = new ArrayList<>();
+                List<Player> overflow = new ArrayList<>();
+
+                for (int i = 0; i < players.size(); i++) {
+                    Player p = players.get(i);
+                    if (i < cap) {
+                        combatants.add(p);
+                    } else {
+                        overflow.add(p);
+                    }
+                }
+
+                for (Player p : combatants) {
                     p.setGameMode(org.bukkit.GameMode.SURVIVAL);
                     p.setHealth(20.0);
                     p.setFoodLevel(20);
@@ -449,10 +468,21 @@ public class MatchManager {
                     plugin.getStatsManager().getStats(p.getUniqueId()).addGame();
                 }
 
-                // Deploy via Happy Ghast bus
+                // Any overflow players become spectators
+                for (Player spec : overflow) {
+                    plugin.getTeamManager().leave(spec);
+                    plugin.getSpectatorManager().makeSpectator(spec);
+                    Location specLoc = getSpectatorLocation();
+                    if (specLoc != null) {
+                        spec.teleport(specLoc);
+                    }
+                    spec.sendMessage(Component.text("⚠ The match roster is full. Ranked players received Purge Priority. You are spectating!", NamedTextColor.YELLOW));
+                }
+
+                // Deploy combatants via Happy Ghast bus
                 Location ghastStart = plugin.getGhastStartLocation();
                 Location ghastEnd = plugin.getGhastEndLocation();
-                plugin.getDeploymentManager().deployPlayers(players, ghastStart, ghastEnd);
+                plugin.getDeploymentManager().deployPlayers(combatants, ghastStart, ghastEnd);
             }
             case RESET -> {
                 Bukkit.broadcast(Component.text("Match complete. Resetting in 15 seconds...", NamedTextColor.YELLOW));

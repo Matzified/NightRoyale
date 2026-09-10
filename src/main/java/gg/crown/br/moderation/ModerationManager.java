@@ -77,16 +77,25 @@ public class ModerationManager implements Listener {
             return;
         }
 
-        // 2. Global chat disabled check (staff exempt)
+        // 2. Lobby chat check: Disable chat in lobby for members
+        Rank rank = plugin.getRankManager().getRank(player);
+        boolean inLobby = !plugin.getMatchManager().isMatchWorld(player.getWorld()) 
+                       || plugin.getMatchManager().getState() != gg.crown.br.state.MatchState.ACTIVE;
+        if (inLobby && rank == Rank.MEMBER && !isStaff) {
+            event.setCancelled(true);
+            player.sendMessage(Component.text("✖ Chat in the lobby is disabled for members.", NamedTextColor.RED));
+            return;
+        }
+
+        // 3. Global chat disabled check (staff exempt)
         if (!chatEnabled && !isStaff) {
             event.setCancelled(true);
             player.sendMessage(Component.text("Chat is currently disabled.", NamedTextColor.RED));
             return;
         }
 
-        // 3. Cooldown check
+        // 4. Cooldown check
         if (!isStaff) {
-            Rank rank = plugin.getRankManager().getRank(player);
             long cooldownMs = (rank == Rank.MIDNIGHT || rank == Rank.TWILIGHT) ? 1000L : 3000L;
 
             long now = System.currentTimeMillis();

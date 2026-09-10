@@ -13,14 +13,14 @@ import org.bukkit.scoreboard.Team;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RankManager implements Listener {
 
     private final NightRoyalePlugin plugin;
-    private final Map<UUID, Rank> playerRanks = new HashMap<>();
+    private final Map<UUID, Rank> playerRanks = new ConcurrentHashMap<>();
     private final File ranksFile;
     private YamlConfiguration ranksConfig;
 
@@ -61,9 +61,18 @@ public class RankManager implements Listener {
         }
     }
 
+    public Rank getRank(UUID uuid) {
+        if (Bukkit.getOfflinePlayer(uuid).isOp()) return Rank.OWNER;
+        return playerRanks.getOrDefault(uuid, Rank.MEMBER);
+    }
+
     public Rank getRank(Player player) {
         if (player.isOp()) return Rank.OWNER;
-        return playerRanks.getOrDefault(player.getUniqueId(), Rank.MEMBER);
+        return getRank(player.getUniqueId());
+    }
+
+    public boolean hasPriority(UUID uuid) {
+        return getRank(uuid) != Rank.MEMBER;
     }
 
     public void setRank(UUID uuid, Rank rank) {
@@ -88,14 +97,11 @@ public class RankManager implements Listener {
         // 1. Tab list display
         player.playerListName(tag.append(Component.text(player.getName(), rank.getColor())));
 
-        // 2. Nametag prefix via Scoreboard Team
-        String teamName = String.format("%03d_%s", 100 - rank.getWeight(), player.getName());
-        if (teamName.length() > 16) teamName = teamName.substring(0, 16);
-
-        applyToBoard(Bukkit.getScoreboardManager().getMainScoreboard(), teamName, tag, rank.getColor(), player.getName());
+        // 2. Nametag & Tab order via Scoreboard Team
+        applyToBoard(Bukkit.getScoreboardManager().getMainScoreboard(), rank, player.getName());
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.getScoreboard() != Bukkit.getScoreboardManager().getMainScoreboard()) {
-                applyToBoard(online.getScoreboard(), teamName, tag, rank.getColor(), player.getName());
+                applyToBoard(online.getScoreboard(), rank, player.getName());
             }
         }
     }
@@ -103,19 +109,28 @@ public class RankManager implements Listener {
     public void applyAllToBoard(Scoreboard board) {
         for (Player p : Bukkit.getOnlinePlayers()) {
             Rank rank = getRank(p);
-            String teamName = String.format("%03d_%s", 100 - rank.getWeight(), p.getName());
-            if (teamName.length() > 16) teamName = teamName.substring(0, 16);
-            applyToBoard(board, teamName, rank.getTagComponent(), rank.getColor(), p.getName());
+            applyToBoard(board, rank, p.getName());
         }
     }
 
-    private void applyToBoard(Scoreboard board, String teamName, Component tag, net.kyori.adventure.text.format.NamedTextColor color, String playerName) {
+    private void applyToBoard(Scoreboard board, Rank rank, String playerName) {
+        // Remove player from any other rank teams on this scoreboard
+        for (Rank r : Rank.values()) {
+            if (r != rank) {
+                Team oldTeam = board.getTeam(r.getTabTeamName());
+                if (oldTeam != null && oldTeam.hasEntry(playerName)) {
+                    oldTeam.removeEntry(playerName);
+                }
+            }
+        }
+
+        String teamName = rank.getTabTeamName();
         Team team = board.getTeam(teamName);
         if (team == null) {
             team = board.registerNewTeam(teamName);
         }
-        team.prefix(tag);
-        team.color(color);
+        team.prefix(rank.getTagComponent());
+        team.color(rank.getColor());
         if (!team.hasEntry(playerName)) {
             team.addEntry(playerName);
         }
