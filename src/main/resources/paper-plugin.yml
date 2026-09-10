@@ -46,3 +46,6 @@ commands:
   elytra:
     description: Lobby elytra and wind toy
     permission: nightroyale.admin
+  lobby:
+    description: Return to the waiting lobby
+    aliases: [hub, leave, spawn]

@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -229,6 +230,78 @@ public class SpectatorManager implements Listener {
         return item;
     }
 
+    public void returnToLobby(Player player) {
+        removeSpectator(player);
+        player.setGameMode(org.bukkit.GameMode.ADVENTURE);
+        player.setHealth(20.0);
+        player.setFoodLevel(20);
+        player.getInventory().clear();
+        player.getInventory().setArmorContents(null);
+
+        Location lobby = plugin.getLobbyLocation();
+        if (lobby != null) {
+            player.teleport(lobby);
+        } else if (!Bukkit.getWorlds().isEmpty()) {
+            player.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
+        }
+
+        player.showTitle(net.kyori.adventure.title.Title.title(
+                Component.text("LOBBY", NamedTextColor.GOLD).decorate(TextDecoration.BOLD),
+                Component.text("Waiting for the next game to begin...", NamedTextColor.GRAY),
+                net.kyori.adventure.title.Title.Times.times(java.time.Duration.ofMillis(200), java.time.Duration.ofSeconds(3), java.time.Duration.ofMillis(500))
+        ));
+        player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
+        player.sendMessage(Component.text("✦ You returned to the lobby. You will automatically join when the next game starts!", NamedTextColor.YELLOW));
+    }
+
+    public void openDeathChoiceGUI(Player player) {
+        Inventory gui = Bukkit.createInventory(null, 27, Component.text("Eliminated — Choose Action", NamedTextColor.DARK_PURPLE).decorate(TextDecoration.BOLD));
+
+        ItemStack filler = createButton(Material.BLACK_STAINED_GLASS_PANE, " ", NamedTextColor.BLACK, "");
+        for (int i = 0; i < 27; i++) {
+            gui.setItem(i, filler);
+        }
+
+        // Slot 11: Spectate
+        ItemStack spectateBtn = new ItemStack(Material.ENDER_EYE);
+        ItemMeta sMeta = spectateBtn.getItemMeta();
+        if (sMeta != null) {
+            sMeta.displayName(Component.text("👁 Spectate Match", NamedTextColor.GREEN).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            sMeta.lore(List.of(
+                    Component.text("Stay in the arena and watch the remaining", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                    Component.text("combatants fight for the win live!", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                    Component.empty(),
+                    Component.text("✦ Compass: Player Teleporter", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
+                    Component.text("✦ Spyglass: Search by IGN", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false),
+                    Component.text("✦ Red Bed: Return to Lobby anytime", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false),
+                    Component.empty(),
+                    Component.text("▶ Click to Spectate", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)
+            ));
+            spectateBtn.setItemMeta(sMeta);
+        }
+        gui.setItem(11, spectateBtn);
+
+        // Slot 15: Leave & Return to Lobby
+        ItemStack lobbyBtn = new ItemStack(Material.RED_BED);
+        ItemMeta lMeta = lobbyBtn.getItemMeta();
+        if (lMeta != null) {
+            lMeta.displayName(Component.text("🚪 Return to Lobby", NamedTextColor.RED).decorate(TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false));
+            lMeta.lore(List.of(
+                    Component.text("Leave the match arena and return to the", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                    Component.text("waiting lobby for the next game!", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                    Component.empty(),
+                    Component.text("✦ Automatically queues for next match", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false),
+                    Component.empty(),
+                    Component.text("▶ Click to Leave & Wait for Next Game", NamedTextColor.RED).decoration(TextDecoration.ITALIC, false)
+            ));
+            lobbyBtn.setItemMeta(lMeta);
+        }
+        gui.setItem(15, lobbyBtn);
+
+        player.openInventory(gui);
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
@@ -246,11 +319,7 @@ public class SpectatorManager implements Listener {
             } else if (item.getType() == Material.SPYGLASS) {
                 promptSearch(player);
             } else if (item.getType() == Material.RED_BED) {
-                removeSpectator(player);
-                if (plugin.getLobbyLocation() != null) {
-                    player.teleport(plugin.getLobbyLocation());
-                }
-                player.sendMessage(Component.text("Returned to lobby.", NamedTextColor.YELLOW));
+                returnToLobby(player);
             }
         }
     }
@@ -294,6 +363,19 @@ public class SpectatorManager implements Listener {
         if (clicked == null || clicked.getType().isAir()) return;
 
         int slot = event.getRawSlot();
+
+        // Death Choice GUI handlers
+        if (slot == 11 && clicked.getType() == Material.ENDER_EYE) {
+            player.closeInventory();
+            player.sendMessage(Component.text("✦ Spectator mode active. Right-click compass to view alive players!", NamedTextColor.AQUA));
+            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.5f);
+            return;
+        }
+        if (slot == 15 && clicked.getType() == Material.RED_BED) {
+            player.closeInventory();
+            returnToLobby(player);
+            return;
+        }
 
         if (slot == 45) { // Random Player
             List<Player> alive = plugin.getMatchManager().getAlivePlayers();

@@ -146,6 +146,7 @@ public final class NightRoyalePlugin extends JavaPlugin {
 
         getCommand("discord").setExecutor(new DiscordLinkCommand(this));
         getCommand("elytra").setExecutor(new ElytraToyCommand(this));
+        getCommand("lobby").setExecutor(new LobbyCommand(this));
 
         getLogger().info("Night Royale v" + getDescription().getVersion() + " initialized by " + getDescription().getAuthors());
     }

@@ -76,15 +76,35 @@ public class CombatListener implements Listener {
         victim.showTitle(eliminationTitle);
         victim.playSound(victim.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.7f, 1.5f);
 
-        // Put into spectator after death with custom tools and GUI
+        // Put into spectator after death with custom tools, choice GUI, and interactive chat prompt
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!victim.isOnline()) return;
             victim.spigot().respawn();
             Location specLoc = plugin.getMatchManager().getSpectatorLocation();
             if (specLoc != null) victim.teleport(specLoc);
             plugin.getSpectatorManager().makeSpectator(victim);
-            victim.sendMessage(Component.text("✦ You are now spectating. Right-click your compass to view alive players!", NamedTextColor.AQUA));
-        }, 2L);
+
+            // Interactive clickable chat options
+            Component spectateBtn = Component.text("[ 👁 SPECTATE ]", NamedTextColor.GREEN)
+                    .decorate(TextDecoration.BOLD)
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(Component.text("Click to stay in the arena and watch the match!", NamedTextColor.GREEN)))
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/nr spectate"));
+
+            Component lobbyBtn = Component.text("[ 🚪 RETURN TO LOBBY ]", NamedTextColor.RED)
+                    .decorate(TextDecoration.BOLD)
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(Component.text("Click to leave the arena and wait in the lobby for the next game!", NamedTextColor.RED)))
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/lobby"));
+
+            victim.sendMessage(Component.empty());
+            victim.sendMessage(Component.text("---------------------------------------------", NamedTextColor.DARK_PURPLE));
+            victim.sendMessage(Component.text("☠ You were eliminated! What would you like to do?", NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
+            victim.sendMessage(Component.text("  ").append(spectateBtn).append(Component.text("   •   ", NamedTextColor.DARK_GRAY)).append(lobbyBtn));
+            victim.sendMessage(Component.text("---------------------------------------------", NamedTextColor.DARK_PURPLE));
+            victim.sendMessage(Component.empty());
+
+            // Open post-death choice GUI
+            plugin.getSpectatorManager().openDeathChoiceGUI(victim);
+        }, 4L);
 
         // Broadcast alive combatants count
         int remaining = 0;
