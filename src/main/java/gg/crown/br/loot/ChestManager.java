@@ -6,6 +6,7 @@ import gg.crown.br.mode.Scenario;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -133,6 +134,12 @@ public class ChestManager {
         for (int i = 0; i < items.size() && i < slots.size(); i++) {
             inv.setItem(slots.get(i), items.get(i));
         }
+    }
+
+    public Inventory createPreviewChest(ChestTier tier, GameMode mode, Set<Scenario> scenarios) {
+        Inventory inv = Bukkit.createInventory(null, 27, Component.text(tier.getStars() + " Chest Preview (" + mode.name() + ")", tier.getColor()).decorate(TextDecoration.BOLD));
+        fillChest(inv, tier, mode, scenarios);
+        return inv;
     }
 
     private void generateSmpLoot(List<ItemStack> items, ChestTier tier, ThreadLocalRandom rand) {

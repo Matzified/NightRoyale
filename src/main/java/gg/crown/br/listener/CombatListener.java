@@ -75,11 +75,12 @@ public class CombatListener implements Listener {
         victim.showTitle(eliminationTitle);
         victim.playSound(victim.getLocation(), Sound.ENTITY_WITHER_SPAWN, 0.7f, 1.5f);
 
-        // Put into spectator after death
+        // Put into spectator after death with custom tools and GUI
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             victim.spigot().respawn();
-            victim.setGameMode(org.bukkit.GameMode.SPECTATOR);
             victim.teleport(plugin.getMatchManager().getSpectatorLocation());
+            plugin.getSpectatorManager().makeSpectator(victim);
+            victim.sendMessage(Component.text("✦ You are now spectating. Right-click your compass to view alive players!", NamedTextColor.AQUA));
         }, 2L);
 
         // Broadcast alive combatants count

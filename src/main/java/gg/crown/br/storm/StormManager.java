@@ -59,6 +59,22 @@ public class StormManager {
         startDamageTask();
     }
 
+    public void shrinkTo(double targetRadius, long seconds) {
+        if (border == null) return;
+        border.setSize(targetRadius * 2, Math.max(1, seconds));
+        startDamageTask();
+    }
+
+    public void setRadius(double radius) {
+        if (border == null) return;
+        border.setSize(radius * 2);
+        startDamageTask();
+    }
+
+    public double getCurrentRadius() {
+        return border != null ? border.getSize() / 2.0 : startRadius;
+    }
+
     private void startDamageTask() {
         if (damageTask != null) damageTask.cancel();
 
@@ -72,6 +88,7 @@ public class StormManager {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (!plugin.getMatchManager().isMatchWorld(player.getWorld())) continue;
                 if (player.getGameMode() == GameMode.SPECTATOR || player.getGameMode() == GameMode.CREATIVE) continue;
+                if (plugin.getSpectatorManager() != null && plugin.getSpectatorManager().isSpectator(player)) continue;
 
                 Location loc = player.getLocation();
                 double dx = Math.abs(loc.getX() - centerX);
