@@ -5,6 +5,12 @@ scoreboard:
   region: EU
   discord: discord.gg/nightroyale
 
+tab:
+  header-image:
+    enabled: true
+    glyph: "\uE200"
+    font: "nightroyale:main"
+
 match:
   min-players: 2
   countdown-seconds: 300

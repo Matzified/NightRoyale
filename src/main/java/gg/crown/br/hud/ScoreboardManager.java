@@ -118,11 +118,24 @@ public class ScoreboardManager implements Listener {
             status = "<yellow><b>ᴡᴀɪᴛɪɴɢ ғᴏʀ ɢᴀᴍᴇ</b></yellow>";
         }
 
-        Component header = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
-                "\n" +
-                "       <gradient:#A855F7:#E085FF><b>✦ ɴɪɢʜᴛ ʀᴏʏᴀʟᴇ ✦</b></gradient>       \n" +
-                "  <dark_gray>•</dark_gray> <gray>1.21.x ʙᴀᴛᴛʟᴇ ʀᴏʏᴀʟᴇ</gray> <dark_gray>•</dark_gray> <#E085FF><b>" + modeName + " ᴍᴏᴅᴇ</b></#E085FF> <dark_gray>•</dark_gray>\n"
-        );
+        Component header;
+        boolean imgEnabled = plugin.getConfig().getBoolean("tab.header-image.enabled", true);
+        if (imgEnabled) {
+            String glyph = plugin.getConfig().getString("tab.header-image.glyph", "\uE200");
+            String font = plugin.getConfig().getString("tab.header-image.font", "nightroyale:main");
+            Component logoComponent = Component.text(glyph + "\n\n", NamedTextColor.WHITE).font(Key.key(font));
+            Component textHeader = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                    "       <gradient:#A855F7:#E085FF><b>✦ ɴɪɢʜᴛ ʀᴏʏᴀʟᴇ ✦</b></gradient>       \n" +
+                    "  <dark_gray>•</dark_gray> <gray>1.21.x ʙᴀᴛᴛʟᴇ ʀᴏʏᴀʟᴇ</gray> <dark_gray>•</dark_gray> <#E085FF><b>" + modeName + " ᴍᴏᴅᴇ</b></#E085FF> <dark_gray>•</dark_gray>\n"
+            );
+            header = Component.text("\n").append(logoComponent).append(textHeader);
+        } else {
+            header = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                    "\n" +
+                    "       <gradient:#A855F7:#E085FF><b>✦ ɴɪɢʜᴛ ʀᴏʏᴀʟᴇ ✦</b></gradient>       \n" +
+                    "  <dark_gray>•</dark_gray> <gray>1.21.x ʙᴀᴛᴛʟᴇ ʀᴏʏᴀʟᴇ</gray> <dark_gray>•</dark_gray> <#E085FF><b>" + modeName + " ᴍᴏᴅᴇ</b></#E085FF> <dark_gray>•</dark_gray>\n"
+            );
+        }
 
         Component footer = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
                 "\n" +
