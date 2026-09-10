@@ -46,7 +46,8 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(Component.text("/nr begin / stop — Force start or cancel active match", NamedTextColor.YELLOW));
             sender.sendMessage(Component.text("/nr storm <start|stop|shrink|size|center> — Storm controls", NamedTextColor.YELLOW));
             sender.sendMessage(Component.text("/nr spectate [player] — Toggle spectator mode with GUI & IGN search", NamedTextColor.YELLOW));
-            sender.sendMessage(Component.text("/nr test <kit|chest|upgrade|crate|ghast|storm|spectate|webhook> — Dev test suite", NamedTextColor.YELLOW));
+            sender.sendMessage(Component.text("/nr motd — Preview current server list ping MOTD", NamedTextColor.YELLOW));
+            sender.sendMessage(Component.text("/nr test <kit|chest|upgrade|crate|ghast|storm|spectate|webhook|motd> — Dev test suite", NamedTextColor.YELLOW));
             sender.sendMessage(Component.text("/nr chest refill — Refill all chests in arena", NamedTextColor.YELLOW));
             sender.sendMessage(Component.text("/nr setlobby / setarena / setstormcenter — Location markers", NamedTextColor.YELLOW));
             sender.sendMessage(Component.text("/nr ghaststart / ghastend — Flight vector markers", NamedTextColor.YELLOW));
@@ -265,6 +266,12 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(Component.text("✔ Toggled spectator mode for " + target.getName(), NamedTextColor.GREEN));
                 return true;
             }
+            case "motd" -> {
+                Component motd = plugin.getMotdManager().buildMotd();
+                sender.sendMessage(Component.text("--- Server MOTD Preview ---", NamedTextColor.GOLD));
+                sender.sendMessage(motd);
+                return true;
+            }
             case "test" -> {
                 if (args.length < 2) {
                     sender.sendMessage(Component.text("--- Night Royale Test Commands ---", NamedTextColor.GOLD));
@@ -409,6 +416,12 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
                         }
                         return true;
                     }
+                    case "motd" -> {
+                        Component motd = plugin.getMotdManager().buildMotd();
+                        sender.sendMessage(Component.text("--- Server MOTD Preview ---", NamedTextColor.GOLD));
+                        sender.sendMessage(motd);
+                        return true;
+                    }
                     default -> {
                         sender.sendMessage(Component.text("Unknown test subcommand: " + testSub, NamedTextColor.RED));
                         return true;
@@ -423,7 +436,7 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("open", "close", "begin", "stop", "match", "storm", "spectate", "test", "chest", "addchest", "setlobby", "setarena", "setstormcenter", "ghaststart", "ghastend", "clearitems", "reload"), args[0]);
+            return filter(List.of("open", "close", "begin", "stop", "match", "storm", "spectate", "motd", "test", "chest", "addchest", "setlobby", "setarena", "setstormcenter", "ghaststart", "ghastend", "clearitems", "reload"), args[0]);
         }
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("storm")) {
@@ -433,7 +446,7 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
                 return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[1]);
             }
             if (args[0].equalsIgnoreCase("test")) {
-                return filter(List.of("kit", "chest", "upgrade", "crate", "ghast", "storm", "spectate", "webhook", "hazard"), args[1]);
+                return filter(List.of("kit", "chest", "upgrade", "crate", "ghast", "storm", "spectate", "webhook", "hazard", "motd"), args[1]);
             }
             if (args[0].equalsIgnoreCase("chest")) {
                 return List.of("refill");

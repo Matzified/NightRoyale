@@ -15,6 +15,7 @@ import gg.crown.br.loot.LootConsolidationListener;
 import gg.crown.br.mode.KitManager;
 import gg.crown.br.mode.ScenarioManager;
 import gg.crown.br.moderation.ModerationManager;
+import gg.crown.br.motd.MotdManager;
 import gg.crown.br.rank.RankManager;
 import gg.crown.br.spectator.SpectatorManager;
 import gg.crown.br.state.LoginGateManager;
@@ -52,6 +53,7 @@ public final class NightRoyalePlugin extends JavaPlugin {
     private ArenaWorldManager arenaWorldManager;
     private FoliageGuardian foliageGuardian;
     private SpectatorManager spectatorManager;
+    private MotdManager motdManager;
 
     private Location lobbyLocation;
     private Location arenaLocation;
@@ -65,6 +67,7 @@ public final class NightRoyalePlugin extends JavaPlugin {
 
         // Initialize core sub-systems
         this.spectatorManager = new gg.crown.br.spectator.SpectatorManager(this);
+        this.motdManager = new MotdManager(this);
         this.loginGateManager = new LoginGateManager(this);
         this.kitManager = new KitManager(this);
         this.scenarioManager = new ScenarioManager(this);
@@ -106,6 +109,7 @@ public final class NightRoyalePlugin extends JavaPlugin {
         pm.registerEvents(new CombatListener(this), this);
         pm.registerEvents(new LobbyListener(this), this);
         pm.registerEvents(spectatorManager, this);
+        pm.registerEvents(motdManager, this);
 
         // Register commands
         var nrCmd = new NightRoyaleCommand(this);
@@ -214,4 +218,5 @@ public final class NightRoyalePlugin extends JavaPlugin {
     public ArenaWorldManager getArenaWorldManager() { return arenaWorldManager; }
     public FoliageGuardian getFoliageGuardian() { return foliageGuardian; }
     public SpectatorManager getSpectatorManager() { return spectatorManager; }
+    public MotdManager getMotdManager() { return motdManager; }
 }
