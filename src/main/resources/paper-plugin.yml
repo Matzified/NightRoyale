@@ -1,0 +1,48 @@
+name: NightRoyale
+version: '1.0.0'
+main: gg.crown.br.NightRoyalePlugin
+author: undefined
+api-version: '1.21'
+description: Night Royale Battle Royale Event Engine
+
+permissions:
+  nightroyale.admin:
+    description: Full administrative access to Night Royale controls and bypasses
+    default: op
+  nightroyale.staff:
+    description: Access to moderation and staff chat commands
+    default: op
+
+commands:
+  nightroyale:
+    description: Primary management command for Night Royale
+    aliases: [nr]
+    permission: nightroyale.admin
+  team:
+    description: Manage squads and teammates
+    aliases: [squad, teams]
+  chest:
+    description: Refill chests across the match arena
+    permission: nightroyale.admin
+  revive:
+    description: Revive an eliminated player back into the current match
+    permission: nightroyale.admin
+  rank:
+    description: Manage and assign player ranks
+    permission: nightroyale.admin
+  chat:
+    description: Toggle global server chat
+    permission: nightroyale.staff
+  mute:
+    description: Mute a player from chat
+    permission: nightroyale.staff
+  unmute:
+    description: Unmute a player
+    permission: nightroyale.staff
+  report:
+    description: Report a player to online staff
+  discord:
+    description: View the official Discord invite link
+  elytra:
+    description: Lobby elytra and wind toy
+    permission: nightroyale.admin

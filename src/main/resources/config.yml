@@ -1,0 +1,54 @@
+# Night Royale — Event Engine Configuration
+# Author: undefined
+
+match:
+  countdown-seconds: 300
+  recruitment-seconds: 60
+  grace-seconds: 60
+  storm-minutes: 15
+  auto-eject-seconds: 11
+
+defaults:
+  mode: SMP
+  team-size: SOLO
+  purge-cap: 60
+  grace-seconds: 60
+  storm-minutes: 15
+  hosted-by: System
+  scenarios: []
+
+storm:
+  start-radius: 550.0
+  final-radius: 20.0
+  damage-start: 1.0
+  damage-ramp: 0.5
+  damage-max: 8.0
+
+chests:
+  tier1: 40
+  tier2: 25
+  tier3: 10
+  tier4: 3
+
+rewards:
+  coins-per-kill: 25
+  xp-per-kill: 50
+  coins-per-win: 250
+  xp-per-win: 500
+  survival-bonus-multiplier: 2.0
+
+scoreboard:
+  region: 'EU'
+  discord-link: 'discord.gg/nightroyale'
+
+login-gate:
+  closed-message: "<red>No games are available to join!</red>\n<white>Join our Discord to be notified: </white><gradient:#A855F7:#E085FF><b>discord.gg/nightroyale</b></gradient>"
+  full-message: "<red>Server Full!</red>\n<white>The player cap for this game has been reached.</white>"
+
+locations:
+  lobby: null
+  arena: null
+  storm-center: null
+  ghast-start: null
+  ghast-end: null
+  spawns: []
