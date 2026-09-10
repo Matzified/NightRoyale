@@ -50,7 +50,11 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(Component.text("/nr test <kit|chest|upgrade|crate|ghast|storm|spectate|webhook|motd> — Dev test suite", NamedTextColor.YELLOW));
             sender.sendMessage(Component.text("/nr chest refill — Refill all chests in arena", NamedTextColor.YELLOW));
             sender.sendMessage(Component.text("/nr setlobby / setarena / setstormcenter — Location markers", NamedTextColor.YELLOW));
-            sender.sendMessage(Component.text("/nr ghaststart / ghastend — Flight vector markers", NamedTextColor.YELLOW));
+            sender.sendMessage(Component.text("/nr pos1 / pos2 — Set arena bounding box positions", NamedTextColor.YELLOW));
+            sender.sendMessage(Component.text("/nr addspawn / clearspawns — Manage arena spawn points", NamedTextColor.YELLOW));
+            sender.sendMessage(Component.text("/nr arena <build|save|saveas|use|list> — Multi-arena presets", NamedTextColor.YELLOW));
+            sender.sendMessage(Component.text("/nr degrass — Clear decorative grass/ferns from arena bounds", NamedTextColor.YELLOW));
+            sender.sendMessage(Component.text("/nr ghaststart / ghastend / clearghast — Flight vector markers", NamedTextColor.YELLOW));
             return true;
         }
 
@@ -106,6 +110,129 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
                 if (!(sender instanceof Player p)) return true;
                 plugin.setGhastEndLocation(p.getLocation());
                 sender.sendMessage(Component.text("✔ Ghast bus end point set.", NamedTextColor.GREEN));
+                return true;
+            }
+            case "clearghast" -> {
+                plugin.setGhastStartLocation(null);
+                plugin.setGhastEndLocation(null);
+                sender.sendMessage(Component.text("✔ Cleared ghast bus flight path.", NamedTextColor.GREEN));
+                return true;
+            }
+            case "pos1" -> {
+                if (!(sender instanceof Player p)) return true;
+                plugin.setArenaPos1(p.getLocation());
+                sender.sendMessage(Component.text("✔ Arena position 1 set.", NamedTextColor.GREEN));
+                return true;
+            }
+            case "pos2" -> {
+                if (!(sender instanceof Player p)) return true;
+                plugin.setArenaPos2(p.getLocation());
+                sender.sendMessage(Component.text("✔ Arena position 2 set.", NamedTextColor.GREEN));
+                return true;
+            }
+            case "addspawn" -> {
+                if (!(sender instanceof Player p)) return true;
+                gg.crown.br.util.LocationUtil.addSpawn(plugin, p.getLocation());
+                sender.sendMessage(Component.text("✔ Added spawn location (" + p.getLocation().getBlockX() + ", " + p.getLocation().getBlockY() + ", " + p.getLocation().getBlockZ() + ").", NamedTextColor.GREEN));
+                return true;
+            }
+            case "clearspawns" -> {
+                gg.crown.br.util.LocationUtil.clearSpawns(plugin);
+                sender.sendMessage(Component.text("✔ Cleared all spawn locations.", NamedTextColor.GREEN));
+                return true;
+            }
+            case "arena" -> {
+                if (args.length < 2) {
+                    sender.sendMessage(Component.text("Usage: /nr arena <build|save|saveas|use|list> [name]", NamedTextColor.RED));
+                    return true;
+                }
+                String arenaSub = args[1].toLowerCase();
+                switch (arenaSub) {
+                    case "build" -> {
+                        if (!(sender instanceof Player p)) return true;
+                        World template = plugin.getArenaWorldManager().getTemplateWorld();
+                        if (template != null) {
+                            p.teleport(template.getSpawnLocation());
+                            sender.sendMessage(Component.text("✔ Teleported to arena template world (nr_arena_template).", NamedTextColor.GREEN));
+                        } else {
+                            sender.sendMessage(Component.text("Arena template world is not loaded.", NamedTextColor.RED));
+                        }
+                        return true;
+                    }
+                    case "save" -> {
+                        World template = plugin.getArenaWorldManager().getTemplateWorld();
+                        if (template != null) {
+                            template.save();
+                            sender.sendMessage(Component.text("✔ Arena template world saved successfully.", NamedTextColor.GREEN));
+                        }
+                        return true;
+                    }
+                    case "saveas" -> {
+                        if (args.length < 3) {
+                            sender.sendMessage(Component.text("Usage: /nr arena saveas <name>", NamedTextColor.RED));
+                            return true;
+                        }
+                        String name = args[2].toLowerCase();
+                        gg.crown.br.util.ArenaPresets.save(plugin, name);
+                        sender.sendMessage(Component.text("✔ Saved current arena configuration as preset '" + name + "'.", NamedTextColor.GREEN));
+                        return true;
+                    }
+                    case "use" -> {
+                        if (args.length < 3) {
+                            sender.sendMessage(Component.text("Usage: /nr arena use <name>", NamedTextColor.RED));
+                            return true;
+                        }
+                        String name = args[2].toLowerCase();
+                        if (gg.crown.br.util.ArenaPresets.load(plugin, name)) {
+                            sender.sendMessage(Component.text("✔ Loaded arena preset '" + name + "'.", NamedTextColor.GREEN));
+                        } else {
+                            sender.sendMessage(Component.text("Preset '" + name + "' not found. Use /nr arena list to view presets.", NamedTextColor.RED));
+                        }
+                        return true;
+                    }
+                    case "list" -> {
+                        List<String> presets = gg.crown.br.util.ArenaPresets.list(plugin);
+                        sender.sendMessage(Component.text("Available Arena Presets: " + (presets.isEmpty() ? "None" : String.join(", ", presets)), NamedTextColor.LIGHT_PURPLE));
+                        return true;
+                    }
+                    default -> {
+                        sender.sendMessage(Component.text("Unknown arena action: " + arenaSub, NamedTextColor.RED));
+                        return true;
+                    }
+                }
+            }
+            case "degrass" -> {
+                Location a = plugin.getArenaPos1();
+                Location b = plugin.getArenaPos2();
+                if (a == null || b == null) {
+                    sender.sendMessage(Component.text("Please set /nr pos1 and /nr pos2 first.", NamedTextColor.RED));
+                    return true;
+                }
+                int removed = plugin.getFoliageGuardian().degrass(a, b);
+                sender.sendMessage(Component.text("✔ Cleared " + removed + " grass/fern blocks from arena bounds.", NamedTextColor.GREEN));
+                return true;
+            }
+            case "teamsize" -> {
+                if (args.length < 2) {
+                    sender.sendMessage(Component.text("Usage: /nr teamsize <solo|duos|trios>", NamedTextColor.RED));
+                    return true;
+                }
+                int size = switch (args[1].toUpperCase()) {
+                    case "DUOS", "2" -> 2;
+                    case "TRIOS", "3" -> 3;
+                    default -> 1;
+                };
+                plugin.getTeamManager().setMaxTeamSize(size);
+                sender.sendMessage(Component.text("✔ Max team size set to: " + size, NamedTextColor.GREEN));
+                return true;
+            }
+            case "mode" -> {
+                if (args.length < 2) {
+                    sender.sendMessage(Component.text("Usage: /nr mode <smp|mace|cart|uhc>", NamedTextColor.RED));
+                    return true;
+                }
+                GameMode mode = GameMode.fromString(args[1]);
+                sender.sendMessage(Component.text("✔ Default mode set to: " + mode.name(), NamedTextColor.GREEN));
                 return true;
             }
             case "match" -> {
@@ -436,7 +563,7 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("open", "close", "begin", "stop", "match", "storm", "spectate", "motd", "test", "chest", "addchest", "setlobby", "setarena", "setstormcenter", "ghaststart", "ghastend", "clearitems", "reload"), args[0]);
+            return filter(List.of("open", "close", "begin", "stop", "match", "storm", "spectate", "motd", "test", "chest", "addchest", "setlobby", "setarena", "setstormcenter", "ghaststart", "ghastend", "clearghast", "pos1", "pos2", "addspawn", "clearspawns", "arena", "degrass", "teamsize", "mode", "clearitems", "reload"), args[0]);
         }
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("storm")) {
@@ -453,6 +580,15 @@ public class NightRoyaleCommand implements CommandExecutor, TabCompleter {
             }
             if (args[0].equalsIgnoreCase("addchest")) {
                 return List.of("1", "2", "3", "4");
+            }
+            if (args[0].equalsIgnoreCase("arena")) {
+                return filter(List.of("build", "save", "saveas", "use", "list"), args[1]);
+            }
+            if (args[0].equalsIgnoreCase("teamsize")) {
+                return filter(List.of("solo", "duos", "trios"), args[1]);
+            }
+            if (args[0].equalsIgnoreCase("mode")) {
+                return filter(List.of("smp", "mace", "cart", "uhc"), args[1]);
             }
         }
         if (args.length == 3) {

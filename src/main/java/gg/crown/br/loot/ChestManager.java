@@ -407,6 +407,74 @@ public class ChestManager {
         return elytra;
     }
 
+    public void scatter(org.bukkit.World world, GameMode mode, Set<Scenario> scenarios) {
+        if (world == null) return;
+        Location p1 = gg.crown.br.util.LocationUtil.read(plugin, "arena-pos1");
+        Location p2 = gg.crown.br.util.LocationUtil.read(plugin, "arena-pos2");
+        if (p1 == null || p2 == null) {
+            plugin.getLogger().warning("Chest scatter skipped — arena bounds not set (use /nr pos1 and /nr pos2).");
+            return;
+        }
+
+        int minX = Math.min(p1.getBlockX(), p2.getBlockX());
+        int maxX = Math.max(p1.getBlockX(), p2.getBlockX());
+        int minZ = Math.min(p1.getBlockZ(), p2.getBlockZ());
+        int maxZ = Math.max(p1.getBlockZ(), p2.getBlockZ());
+
+        org.bukkit.configuration.file.FileConfiguration cfg = plugin.getConfig();
+        int tier1Count = cfg.getInt("chests.tier1", 280);
+        int tier2Count = cfg.getInt("chests.tier2", 180);
+        int tier3Count = cfg.getInt("chests.tier3", 40);
+        int tier4Count = cfg.getInt("chests.tier4", 5);
+
+        scatterTier(world, minX, maxX, minZ, maxZ, ChestTier.TIER_4, tier4Count, mode, scenarios);
+        scatterTier(world, minX, maxX, minZ, maxZ, ChestTier.TIER_3, tier3Count, mode, scenarios);
+        scatterTier(world, minX, maxX, minZ, maxZ, ChestTier.TIER_2, tier2Count, mode, scenarios);
+        scatterTier(world, minX, maxX, minZ, maxZ, ChestTier.TIER_1, tier1Count, mode, scenarios);
+
+        plugin.getLogger().info("Scattered " + registeredChests.size() + " loot chests across the match arena.");
+    }
+
+    private void scatterTier(org.bukkit.World world, int minX, int maxX, int minZ, int maxZ, ChestTier tier, int count, GameMode mode, Set<Scenario> scenarios) {
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        int placed = 0;
+        int minGap = switch (tier) {
+            case TIER_4 -> 25;
+            case TIER_3 -> 15;
+            case TIER_2 -> 7;
+            default -> 4;
+        };
+
+        for (int i = 0; i < count && placed < count; i++) {
+            for (int attempt = 0; attempt < 300; attempt++) {
+                int x = rand.nextInt(minX, maxX + 1);
+                int z = rand.nextInt(minZ, maxZ + 1);
+                Block ground = world.getHighestBlockAt(x, z);
+                if (!ground.getType().isSolid() || ground.isLiquid() || ground.getType() == Material.CHEST) continue;
+                Block chestBlock = ground.getRelative(0, 1, 0);
+                if (chestBlock.getType() != Material.AIR || chestBlock.getRelative(0, 1, 0).getType() != Material.AIR) continue;
+
+                boolean tooClose = false;
+                for (Location loc : registeredChests.keySet()) {
+                    if (loc.getWorld().equals(world) && loc.distanceSquared(chestBlock.getLocation()) < (minGap * minGap)) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+                if (tooClose) continue;
+
+                chestBlock.setType(Material.CHEST);
+                registerChest(chestBlock.getLocation(), tier);
+                if (chestBlock.getState() instanceof Chest c) {
+                    fillChest(c.getBlockInventory(), tier, mode, scenarios);
+                    updateHologram(chestBlock.getLocation(), tier);
+                }
+                placed++;
+                break;
+            }
+        }
+    }
+
     private ItemStack createEnchantBook(Enchantment ench, int level) {
         ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
         EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();

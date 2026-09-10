@@ -77,6 +77,19 @@ public class StatsManager implements Listener {
         }
     }
 
+    public int getGamesRun() {
+        return statsConfig != null ? statsConfig.getInt("server.games-run", 0) : 0;
+    }
+
+    public void setGamesRun(int count) {
+        if (statsConfig != null) {
+            statsConfig.set("server.games-run", count);
+            try {
+                statsConfig.save(statsFile);
+            } catch (IOException ignored) {}
+        }
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         savePlayerStats(event.getPlayer().getUniqueId());

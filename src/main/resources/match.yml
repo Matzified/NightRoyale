@@ -1,0 +1,13 @@
+# Written by the Night Royale Discord bot at 2026-08-22T09:56:24.996Z
+team-size: DUOS
+storm-minutes: 20
+purge-cap: 1
+scenarios:
+- DOUBLE_ELYTRA
+- ELYTRA
+- NO_FALL_DAMAGE
+- LOCATOR_BAR
+- SPEARS
+- WIND_RESET
+hosted-by: blindness_mc
+mode: MACE ROYALE

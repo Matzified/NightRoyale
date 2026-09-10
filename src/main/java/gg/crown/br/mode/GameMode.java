@@ -24,7 +24,10 @@ public enum GameMode {
 
     public static GameMode fromString(String input) {
         if (input == null || input.isBlank()) return SMP;
-        String sanitized = input.trim().toUpperCase().replace("_ROYALE", "").replace(" ", "_");
+        String sanitized = input.trim().toUpperCase()
+                .replace("ROYALE", "")
+                .replace(" ", "")
+                .replace("_", "");
         for (GameMode mode : values()) {
             if (mode.name().equalsIgnoreCase(sanitized) || mode.key.equalsIgnoreCase(sanitized)) {
                 return mode;

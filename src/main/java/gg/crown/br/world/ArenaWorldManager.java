@@ -24,6 +24,21 @@ public class ArenaWorldManager {
         return activeMatchWorld;
     }
 
+    public World getTemplateWorld() {
+        World w = Bukkit.getWorld(TEMPLATE_WORLD_NAME);
+        if (w != null) return w;
+        WorldCreator creator = new WorldCreator(TEMPLATE_WORLD_NAME);
+        creator.environment(World.Environment.NORMAL);
+        creator.type(WorldType.FLAT);
+        creator.generateStructures(false);
+        World created = creator.createWorld();
+        if (created != null) {
+            applyForcedRules(created);
+            created.setAutoSave(true);
+        }
+        return created;
+    }
+
     public boolean isMatchWorld(World world) {
         return activeMatchWorld != null && activeMatchWorld.equals(world);
     }

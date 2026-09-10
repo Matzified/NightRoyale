@@ -14,9 +14,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.*;
 
@@ -45,6 +47,7 @@ public class MatchManager {
 
     public MatchManager(NightRoyalePlugin plugin) {
         this.plugin = plugin;
+        loadMatchYaml();
         startPulseTask();
     }
 
@@ -320,25 +323,26 @@ public class MatchManager {
         plugin.getDiscordNotifier().sendGameOver(winnerNames, teamMvp, gameMvp, gameMvpKills, duration, currentMode.getDisplayName());
 
         // 3. Save to matches.json
-        List<MatchRecorder.PlayerRecord> records = new ArrayList<>();
+        List<MatchRecorder.BoardEntry> board = new ArrayList<>();
         for (UUID uuid : matchRoster) {
             Player p = Bukkit.getPlayer(uuid);
             String name = p != null ? p.getName() : "Player";
             int kills = getMatchKills(uuid);
             int placement = winners.stream().anyMatch(w -> w.getUniqueId().equals(uuid)) ? 1 : 2;
             int rating = plugin.getStatsManager().getStats(uuid).getRating();
-            records.add(new MatchRecorder.PlayerRecord(uuid.toString(), name, kills, placement, rating));
+            board.add(new MatchRecorder.BoardEntry(name, uuid.toString(), kills, placement, rating));
         }
 
+        int gameNumber = plugin.getStatsManager().getGamesRun() + 1;
+        plugin.getStatsManager().setGamesRun(gameNumber);
+
+        String primaryWinner = winnerNames.isEmpty() ? null : String.join(", ", winnerNames);
         MatchRecorder.MatchEntry entry = new MatchRecorder.MatchEntry(
+                gameNumber,
                 System.currentTimeMillis(),
-                System.currentTimeMillis(),
-                currentMode.name(),
-                duration,
-                winnerNames,
-                gameMvp,
-                gameMvpKills,
-                records
+                matchRoster.size(),
+                primaryWinner,
+                board
         );
         plugin.getMatchRecorder().recordMatch(entry);
 
@@ -385,6 +389,9 @@ public class MatchManager {
 
                 // Clear debris
                 plugin.getFoliageGuardian().clearItems(matchWorld);
+
+                // Scatter arena loot chests
+                plugin.getChestManager().scatter(matchWorld, currentMode, currentScenarios);
 
                 // Populate match roster & equip kits
                 matchRoster.clear();
@@ -481,6 +488,52 @@ public class MatchManager {
 
         if (Boolean.parseBoolean(params.getOrDefault("begin", "false"))) {
             transitionTo(MatchState.COUNTDOWN);
+        }
+    }
+
+    public void loadMatchYaml() {
+        File file = new File(plugin.getDataFolder(), "match.yml");
+        if (!file.exists()) {
+            plugin.saveResource("match.yml", false);
+        }
+        if (!file.exists()) return;
+
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        if (config.contains("mode")) {
+            this.currentMode = GameMode.fromString(config.getString("mode"));
+        }
+        if (config.contains("team-size")) {
+            String ts = config.getString("team-size", "SOLOS").toUpperCase();
+            int size = switch (ts) {
+                case "DUOS", "2" -> 2;
+                case "TRIOS", "3" -> 3;
+                default -> 1;
+            };
+            plugin.getTeamManager().setMaxTeamSize(size);
+        }
+        if (config.contains("storm-minutes")) {
+            this.stormMinutes = config.getInt("storm-minutes", 20);
+        }
+        if (config.contains("purge-cap")) {
+            plugin.getLoginGateManager().setPurgeCap(config.getInt("purge-cap", 60));
+        }
+        if (config.contains("hosted-by")) {
+            this.hostName = config.getString("hosted-by", "System");
+        }
+        if (config.contains("grace-seconds")) {
+            this.graceSeconds = config.getLong("grace-seconds", 60);
+        }
+        if (config.contains("countdown-seconds")) {
+            this.countdownSeconds = config.getLong("countdown-seconds", 300);
+        }
+        if (config.contains("scenarios")) {
+            currentScenarios.clear();
+            List<String> rawList = config.getStringList("scenarios");
+            for (String raw : rawList) {
+                Scenario s = Scenario.fromKey(raw);
+                if (s != null) currentScenarios.add(s);
+            }
+            plugin.getScenarioManager().setScenarios(currentScenarios, currentMode);
         }
     }
 }

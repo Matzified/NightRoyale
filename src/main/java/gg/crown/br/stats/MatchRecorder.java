@@ -23,17 +23,14 @@ public class MatchRecorder {
         this.matchesFile = new File(plugin.getDataFolder(), "matches.json");
     }
 
-    public record PlayerRecord(String uuid, String username, int kills, int placement, int rating) {}
+    public record BoardEntry(String name, String uuid, int kills, int place, int rating) {}
 
     public record MatchEntry(
-            long matchNumber,
-            long timestamp,
-            String mode,
-            long durationSeconds,
-            List<String> winners,
-            String gameMvp,
-            int mvpKills,
-            List<PlayerRecord> roster
+            int game,
+            long time,
+            int players,
+            String winner,
+            List<BoardEntry> board
     ) {}
 
     public void recordMatch(MatchEntry entry) {
@@ -48,7 +45,7 @@ public class MatchRecorder {
         saveMatches(entries);
     }
 
-    private List<MatchEntry> loadMatches() {
+    public List<MatchEntry> loadMatches() {
         if (!matchesFile.exists()) return new ArrayList<>();
         try (FileReader reader = new FileReader(matchesFile)) {
             Type listType = new TypeToken<ArrayList<MatchEntry>>(){}.getType();

@@ -1,45 +1,111 @@
-# Night Royale — Event Engine Configuration
-# Author: undefined
-
-match:
-  countdown-seconds: 300
-  recruitment-seconds: 60
-  grace-seconds: 60
-  storm-minutes: 15
-  auto-eject-seconds: 11
-
-defaults:
-  mode: SMP
-  team-size: SOLO
-  purge-cap: 60
-  grace-seconds: 60
-  storm-minutes: 15
-  hosted-by: System
-  scenarios: []
-
-storm:
-  start-radius: 550.0
-  final-radius: 20.0
-  damage-start: 1.0
-  damage-ramp: 0.5
-  damage-max: 8.0
-
-chests:
-  tier1: 40
-  tier2: 25
-  tier3: 10
-  tier4: 3
-
-rewards:
-  coins-per-kill: 25
-  xp-per-kill: 50
-  coins-per-win: 250
-  xp-per-win: 500
-  survival-bonus-multiplier: 2.0
+# Night Royale — match engine. The server stays up between games; when no game is open it's
+# whitelisted (real server whitelist, ops always bypass it) rather than shut down.
 
 scoreboard:
-  region: 'EU'
-  discord-link: 'discord.gg/nightroyale'
+  region: EU
+  discord: discord.gg/nightroyale
+
+match:
+  min-players: 2
+  countdown-seconds: 300
+  purge-seconds: 5
+  recruitment-seconds: 100
+  ending-seconds: 10 # how long the winner screen shows before shutdown
+  empty-timeout-seconds: 600 # if the freshly-booted server sits empty this long, shut down
+
+# Fallback match settings, used ONLY when the Discord bot hasn't dropped a match.yml.
+# The bot overwrites these per game via the Pterodactyl file API before boot.
+# grace-seconds is also settable per-match now: /nr match grace=<seconds> or
+# /nr start's modifier stream (grace=<seconds>) — this is only the fallback default.
+defaults:
+  team-size: SOLO # SOLO | DUOS | TRIOS
+  storm-minutes: 20 # minutes until the storm fully closes (used in Phase 2)
+  purge-cap: 60 # max players
+  grace-seconds: 100
+  scenarios: []
+  hosted-by: Crown
+
+lobby:
+  world: world
+  x: 132.47119038108798
+  y: 166.0
+  z: 180.58436888140483
+  yaw: 176.31116
+  pitch: 90.0
+
+spawns:
+- world,132.38134766388606,166.0,180.26556154084736,-144.61418,89.86947
+- world,132.51008821681367,166.0,180.6089147285672,12.928314,90.0
+
+arena-pos1:
+  world: nr_arena_template
+  x: 10528.532001355792
+  y: 62.0
+  z: -10286.298776498435
+  yaw: 49.128822
+  pitch: 89.95649
+
+arena-pos2:
+  world: nr_arena_template
+  x: 9527.424246385663
+  y: 309.0
+  z: -9285.435065592634
+  yaw: -138.72205
+  pitch: 90.0
+
+arena:
+  world: nr_arena_template
+  x: -289.50553507114324
+  y: 150.0
+  z: -0.5880527627419513
+  yaw: -132.669
+  pitch: 90.0
+
+# Loot chests scattered in the arena region each game.
+chests:
+  tier1: 280
+  tier2: 180
+  tier3: 40
+  tier4: 5
+
+ghast-start:
+  world: nr_arena_template
+  x: 9641.464199504053
+  y: 212.0
+  z: -9696.633309331351
+  yaw: -112.05347
+  pitch: 90.0
+
+ghast-end:
+  world: nr_arena_template
+  x: 10402.201970047143
+  y: 212.0
+  z: -9696.196162751512
+  yaw: -108.57753
+  pitch: 84.77892
+
+# Shrinking world border. Starts at the arena size, closes once grace ends.
+storm:
+  enabled: true
+  start-radius: 550
+  final-radius: 20
+  damage-start: 1.0 # first hit, per second outside
+  damage-ramp: 0.5 # extra damage per 5s you stay out
+  damage-max: 10.0
+
+storm-center:
+  world: nr_arena_template
+  x: 10095.346901169465
+  y: 86.0
+  z: -9723.205859419657
+  yaw: -77.80786
+  pitch: 90.0
+
+# Live match-lifecycle pings (5-min warning, purge start, game over) via a Discord webhook.
+discord:
+  webhook-url: "https://discord.com/api/webhooks/1543177690117308536/OFuFjXCOVJl04mCl6_U5aTyy7owSwSW4_2C0bzk_cjyHsHgLJ52RxNG53Hgubu0406SY"
+  games-role-id: "1542906268954402927"
+  server-ip: nightroyale.fun
 
 login-gate:
   closed-message: "<red>No games are available to join!</red>\n<white>Join our Discord to be notified: </white><gradient:#A855F7:#E085FF><b>discord.gg/nightroyale</b></gradient>"
@@ -56,11 +122,3 @@ motd:
   active:
     line1: "        <gradient:#A855F7:#E085FF><b>✦ ɴɪɢʜᴛ ʀᴏʏᴀʟᴇ ✦</b></gradient>  <dark_gray>•</dark_gray>  <#E085FF><b>{MODE} ʙᴀᴛᴛʟᴇ ʀᴏʏᴀʟᴇ</b></#E085FF>"
     line2: "   <gold><b>⚔ ɢᴀᴍᴇ ɪɴ ᴘʀᴏɢʀᴇss</b></gold> <dark_gray>»</dark_gray> <#E085FF><b>{ALIVE} ᴄᴏᴍʙᴀᴛᴀɴᴛs ᴀʟɪᴠᴇ</b></#E085FF> <dark_gray>•</dark_gray> <gray>sᴘᴇᴄᴛᴀᴛᴇ ɴᴏᴡ</gray>"
-
-locations:
-  lobby: null
-  arena: null
-  storm-center: null
-  ghast-start: null
-  ghast-end: null
-  spawns: []

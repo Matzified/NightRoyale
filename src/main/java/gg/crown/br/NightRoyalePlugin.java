@@ -59,10 +59,17 @@ public final class NightRoyalePlugin extends JavaPlugin {
     private Location arenaLocation;
     private Location ghastStartLocation;
     private Location ghastEndLocation;
+    private Location arenaPos1;
+    private Location arenaPos2;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        saveResource("arenas.yml", false);
+        saveResource("match.yml", false);
+        saveResource("ranks.yml", false);
+        saveResource("stats.yml", false);
+        saveResource("matches.json", false);
         loadLocations();
 
         // Initialize core sub-systems
@@ -157,44 +164,64 @@ public final class NightRoyalePlugin extends JavaPlugin {
         getLogger().info("Night Royale disabled safely.");
     }
 
-    private void loadLocations() {
-        this.lobbyLocation = getConfig().getLocation("locations.lobby");
-        this.arenaLocation = getConfig().getLocation("locations.arena");
-        this.ghastStartLocation = getConfig().getLocation("locations.ghast-start");
-        this.ghastEndLocation = getConfig().getLocation("locations.ghast-end");
+    public void loadLocations() {
+        this.lobbyLocation = readLocation("lobby");
+        this.arenaLocation = readLocation("arena");
+        this.ghastStartLocation = readLocation("ghast-start");
+        this.ghastEndLocation = readLocation("ghast-end");
+        this.arenaPos1 = readLocation("arena-pos1");
+        this.arenaPos2 = readLocation("arena-pos2");
+
+        Location stormCenter = readLocation("storm-center");
+        if (stormCenter != null && stormManager != null) {
+            stormManager.setStormCenter(stormCenter);
+        }
+    }
+
+    private Location readLocation(String key) {
+        Location loc = gg.crown.br.util.LocationUtil.read(this, key);
+        if (loc != null) return loc;
+        return gg.crown.br.util.LocationUtil.read(this, "locations." + key);
     }
 
     public Location getLobbyLocation() { return lobbyLocation; }
     public void setLobbyLocation(Location loc) {
         this.lobbyLocation = loc;
-        getConfig().set("locations.lobby", loc);
-        saveConfig();
+        gg.crown.br.util.LocationUtil.write(this, "lobby", loc);
     }
 
     public Location getArenaLocation() { return arenaLocation; }
     public void setArenaLocation(Location loc) {
         this.arenaLocation = loc;
-        getConfig().set("locations.arena", loc);
-        saveConfig();
+        gg.crown.br.util.LocationUtil.write(this, "arena", loc);
     }
 
     public Location getGhastStartLocation() { return ghastStartLocation; }
     public void setGhastStartLocation(Location loc) {
         this.ghastStartLocation = loc;
-        getConfig().set("locations.ghast-start", loc);
-        saveConfig();
+        gg.crown.br.util.LocationUtil.write(this, "ghast-start", loc);
     }
 
     public Location getGhastEndLocation() { return ghastEndLocation; }
     public void setGhastEndLocation(Location loc) {
         this.ghastEndLocation = loc;
-        getConfig().set("locations.ghast-end", loc);
-        saveConfig();
+        gg.crown.br.util.LocationUtil.write(this, "ghast-end", loc);
+    }
+
+    public Location getArenaPos1() { return arenaPos1; }
+    public void setArenaPos1(Location loc) {
+        this.arenaPos1 = loc;
+        gg.crown.br.util.LocationUtil.write(this, "arena-pos1", loc);
+    }
+
+    public Location getArenaPos2() { return arenaPos2; }
+    public void setArenaPos2(Location loc) {
+        this.arenaPos2 = loc;
+        gg.crown.br.util.LocationUtil.write(this, "arena-pos2", loc);
     }
 
     public void saveStormCenterLocation(Location loc) {
-        getConfig().set("locations.storm-center", loc);
-        saveConfig();
+        gg.crown.br.util.LocationUtil.write(this, "storm-center", loc);
     }
 
     // Getters for all manager components
