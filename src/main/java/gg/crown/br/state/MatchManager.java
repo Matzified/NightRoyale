@@ -536,4 +536,15 @@ public class MatchManager {
             plugin.getScenarioManager().setScenarios(currentScenarios, currentMode);
         }
     }
+
+    public void stop() {
+        if (mainPulseTask != null) {
+            mainPulseTask.cancel();
+            mainPulseTask = null;
+        }
+        if (resetTask != null) {
+            resetTask.cancel();
+            resetTask = null;
+        }
+    }
 }

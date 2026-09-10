@@ -12,9 +12,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
 
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
+
 import java.util.*;
 
-public class ScoreboardManager {
+public class ScoreboardManager implements Listener {
 
     private final NightRoyalePlugin plugin;
     private final Map<UUID, FastBoard> boards = new HashMap<>();
@@ -34,7 +38,8 @@ public class ScoreboardManager {
 
         MatchState state = plugin.getMatchManager().getState();
         String region = plugin.getConfig().getString("scoreboard.region", "EU");
-        String discordLink = plugin.getConfig().getString("scoreboard.discord-link", "discord.gg/nightroyale");
+        String discordLink = plugin.getConfig().getString("scoreboard.discord",
+                plugin.getConfig().getString("scoreboard.discord-link", "discord.gg/nightroyale"));
 
         board.updateTitle(Component.text("NIGHT ROYALE", NamedTextColor.GOLD).decorate(TextDecoration.BOLD).font(Key.key("nightroyale:main")));
 
@@ -97,6 +102,18 @@ public class ScoreboardManager {
         if (board != null) {
             board.delete();
         }
+    }
+
+    public void clearAll() {
+        for (FastBoard board : boards.values()) {
+            board.delete();
+        }
+        boards.clear();
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        remove(event.getPlayer());
     }
 
     private String formatTime(long seconds) {

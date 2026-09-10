@@ -117,6 +117,7 @@ public final class NightRoyalePlugin extends JavaPlugin {
         pm.registerEvents(new LobbyListener(this), this);
         pm.registerEvents(spectatorManager, this);
         pm.registerEvents(motdManager, this);
+        pm.registerEvents(scoreboardManager, this);
 
         // Register commands
         var nrCmd = new NightRoyaleCommand(this);
@@ -151,6 +152,8 @@ public final class NightRoyalePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (matchManager != null) matchManager.stop();
+        if (scoreboardManager != null) scoreboardManager.clearAll();
         if (statsManager != null) statsManager.saveAll();
         if (rankManager != null) rankManager.saveRanks();
         if (chestManager != null) chestManager.clearAll();

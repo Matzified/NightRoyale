@@ -87,4 +87,28 @@ public class CombatListener implements Listener {
         int alive = plugin.getMatchManager().getAliveCount() - 1;
         Bukkit.broadcast(Component.text(victim.getName() + " was eliminated! (" + alive + " players remaining)", NamedTextColor.GRAY));
     }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onWindReset(org.bukkit.event.entity.ProjectileLaunchEvent event) {
+        if (plugin.getMatchManager().getState() != MatchState.ACTIVE) return;
+        if (!plugin.getMatchManager().hasScenario(gg.crown.br.mode.Scenario.WIND_RESET)) return;
+
+        if (!(event.getEntity() instanceof org.bukkit.entity.WindCharge wc)) return;
+        if (!(wc.getShooter() instanceof Player player)) return;
+
+        org.bukkit.util.Vector v = player.getVelocity();
+        boolean falling = v.getY() <= -0.3;
+        boolean aimingDown = player.getLocation().getPitch() >= 60.0f;
+        if (!falling || !aimingDown) return;
+
+        player.setVelocity(new org.bukkit.util.Vector(v.getX(), 0.0, v.getZ()));
+        player.setFallDistance(0.0f);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onCreatureSpawn(org.bukkit.event.entity.CreatureSpawnEvent event) {
+        if (event.getEntityType() == org.bukkit.entity.EntityType.ENDERMITE) {
+            event.setCancelled(true);
+        }
+    }
 }
