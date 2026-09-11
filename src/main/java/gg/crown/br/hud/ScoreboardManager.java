@@ -190,6 +190,10 @@ public class ScoreboardManager implements Listener {
             }
         }
 
+        public Player getPlayer() {
+            return player;
+        }
+
         public void updateTitle(Component title) {
             objective.displayName(title);
         }

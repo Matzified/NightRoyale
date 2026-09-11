@@ -1,7 +1,6 @@
 package gg.crown.br.state;
 
 import gg.crown.br.NightRoyalePlugin;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;

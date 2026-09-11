@@ -49,11 +49,10 @@ public class ArmorUpgradeManager implements Listener {
         Material nextMat = getNextTier(currentPiece.getType());
         if (nextMat == null) return false;
 
-        ItemStack upgraded = currentPiece.clone();
-        upgraded.setType(nextMat);
-
-        ItemMeta meta = upgraded.getItemMeta();
+        ItemStack upgraded = new ItemStack(nextMat, currentPiece.getAmount());
+        ItemMeta meta = currentPiece.getItemMeta();
         if (meta != null) {
+            meta = meta.clone();
             String tierName = nextMat.name().startsWith("DIAMOND") ? "Diamond" : "Netherite";
             String pieceName = switch (targetIndex) {
                 case 0 -> "Boots";
